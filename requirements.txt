@@ -1,0 +1,16 @@
+flask>=3.0
+arxiv>=2.1
+requests>=2.31
+PyMuPDF>=1.24
+transformers>=4.40
+torch>=2.2
+keybert>=0.8
+sentence-transformers>=2.7
+faiss-cpu>=1.8
+scikit-learn>=1.4
+gunicorn>=21.2.0
+pymongo
+dnspython
+openai
+python-dotenv
+requests
