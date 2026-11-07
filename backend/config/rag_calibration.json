@@ -1,0 +1,32 @@
+{
+ "dense_model_version": "hybrid:tfidf:sklearn:e2c2130d+e5:intfloat/e5-base-v2:0a355434",
+ "note": "off-topic questions were written by the assistant (30, not human-curated); thresholds fitted on dev + half of them",
+ "n": {
+  "dev": 44,
+  "validation": 21,
+  "test": 24,
+  "off_cal": 15,
+  "off_heldout": 15
+ },
+ "dense": {
+  "threshold": 0.8225,
+  "dev_in_domain_kept": 0.9772727272727273,
+  "off_topic_refused_cal": 1.0,
+  "heldout_validation_kept": 1.0,
+  "heldout_test_kept": 0.9583333333333334,
+  "heldout_off_topic_refused": 1.0
+ },
+ "lexical": {
+  "threshold": 0.625,
+  "dev_in_domain_kept": 0.9545454545454546,
+  "off_topic_refused_cal": 0.4,
+  "heldout_validation_kept": 0.8571428571428571,
+  "heldout_test_kept": 0.75,
+  "heldout_off_topic_refused": 0.6666666666666666
+ },
+ "min_dense_cosine": 0.8225,
+ "min_coverage_lexical": 0.625,
+ "use_reranker": false,
+ "cross_doc_depth": 20,
+ "cross_doc_max_docs": null
+}

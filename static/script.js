@@ -267,10 +267,10 @@
             el.className = "similar-item";
             const title = item.paper?.title || "Untitled";
             const url = item.paper?.url || "#";
-            const dist = item.distance?.toFixed(3) || "—";
+            const sim = item.similarity != null ? item.similarity.toFixed(3) : "—";
             el.innerHTML = `
                 <a href="${escapeAttr(url)}" target="_blank" class="similar-item__title">${escapeHtml(truncate(title, 80))}</a>
-                <span class="similar-item__badge">dist ${dist}</span>
+                <span class="similar-item__badge" title="cosine similarity under the production embedding model">sim ${sim}</span>
             `;
             similarContainer.appendChild(el);
         });

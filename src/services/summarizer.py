@@ -26,7 +26,7 @@ def summarize_text(text):
 def summarize_and_store(paper_id, abstract):
     summary = summarize_text(abstract)
 
-    if summary:
+    if summary and papers_collection is not None:
         papers_collection.update_one(
             {"paper_id": paper_id},
             {"$set": {"summary": summary}}

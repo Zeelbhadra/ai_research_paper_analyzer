@@ -1,16 +1,33 @@
+# Runtime dependencies (lower bounds; tested versions are pinned in requirements.lock)
 flask>=3.0
-arxiv>=2.1
+gunicorn>=21.2
 requests>=2.31
+python-dotenv>=1.0
+numpy>=1.26
+scipy>=1.11
+scikit-learn>=1.4
+pandas>=2.0
+joblib>=1.3
+psutil>=5.9
+
+# documents, discovery
 PyMuPDF>=1.24
-transformers>=4.40
+pdfplumber>=0.11
+arxiv>=2.1
+
+# embeddings, vector search, NLP (torch: CPU wheel in Docker)
 torch>=2.2
-keybert>=0.8
+transformers>=4.40
 sentence-transformers>=2.7
 faiss-cpu>=1.8
-scikit-learn>=1.4
-gunicorn>=21.2.0
-pymongo
-dnspython
-openai
-python-dotenv
-requests
+keybert>=0.8
+
+# LLM provider, explainability, scheduling
+openai>=1.30
+shap>=0.45
+lime>=0.2
+apscheduler>=3.10
+
+# legacy summary cache (optional at runtime)
+pymongo>=4.6
+dnspython>=2.4

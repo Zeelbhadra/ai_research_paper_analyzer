@@ -30,7 +30,8 @@ def _download_task(paper_id, pdf_url):
             for chunk in response.iter_content(8192):
                 f.write(chunk)
 
-        papers_collection.update_one(
+        if papers_collection is not None:
+          papers_collection.update_one(
             {"paper_id": paper_id},
             {
                 "$set": {

@@ -1,0 +1,54 @@
+# docker compose up --build            -> app only (SQLite + FAISS on a named volume)
+# docker compose --profile mongo up    -> also a local MongoDB for the legacy summary cache (set MONGO_URI=mongodb://mongo:27017)
+name: paperlens
+
+services:
+  app:
+    build: .
+    image: paperlens:2.0
+    env_file:
+      - path: .env            # API keys live here (never baked into the image); optional so the stack starts without it
+        required: false
+    environment:
+      STORAGE_DIR: /app/storage
+      DATA_DIR: /app/data
+      PORT: "5000"
+      LOG_FORMAT: json
+      WARMUP: "1"                           # load models in the background at start-up
+      AUTOMATION: "${AUTOMATION:-0}"        # 1 = start the scheduler (discovery, monitoring, benchmark, reports)
+    ports:
+      - "${HOST_PORT:-5000}:5000"
+    volumes:
+      - storage:/app/storage                # SQLite, FAISS/TF-IDF indexes, embedding cache, model registry, metrics, logs, reports
+      - ./data:/app/data:ro                 # source PDFs (read-only)
+      - hf_cache:/app/.cache/huggingface    # downloaded model weights
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:5000/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 3
+    restart: unless-stopped
+    mem_limit: 6g                           # E5/BGE/SBERT + indexes need roughly 1-2 GB; headroom for benchmarks
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  mongo:
+    profiles: ["mongo"]
+    image: mongo:7
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  storage:
+  hf_cache:
+  mongo_data:

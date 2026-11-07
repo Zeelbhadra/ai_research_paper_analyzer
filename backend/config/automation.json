@@ -1,0 +1,52 @@
+{
+  "_comment": "Scheduling and monitoring policy. 'enabled' is false by default: nothing runs in the background unless you turn it on (AUTOMATION=1 or this flag).",
+  "enabled": false,
+  "discovery": {
+    "topics": [
+      "retrieval-augmented generation",
+      "vision transformer"
+    ],
+    "cron": "0 3 * * *",
+    "max_results": 10,
+    "sources": [
+      "arxiv",
+      "semantic_scholar"
+    ],
+    "download_delay_seconds": 1.0
+  },
+  "enrichment": {
+    "keywords": true,
+    "summary": true,
+    "topics": true,
+    "topic_labels": [
+      "Machine Learning",
+      "Computer Vision",
+      "Natural Language Processing",
+      "Reinforcement Learning",
+      "Optimization and Algorithms",
+      "Transportation and Mobility",
+      "Healthcare and Biology",
+      "Statistics and Probability",
+      "Data Mining and Databases",
+      "Robotics and Control"
+    ]
+  },
+  "monitoring": {
+    "interval_minutes": 15,
+    "window_minutes": 60,
+    "latency_p95_ms": 500,
+    "max_fallback_rate": 0.2,
+    "max_retrieval_failure_rate": 0.05,
+    "max_answer_replaced_rate": 0.5,
+    "min_requests_for_alerts": 10,
+    "corpus_growth_trigger": 0.2,
+    "max_benchmark_age_days": 30,
+    "benchmark_cooldown_hours": 24
+  },
+  "benchmark": {
+    "cron": "0 4 * * 0"
+  },
+  "report": {
+    "cron": "0 6 * * *"
+  }
+}

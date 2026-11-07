@@ -1,14 +1,28 @@
+import logging
 import os
-import traceback
+import threading
 
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, render_template
 
-from src.services.paper_fetcher import fetch_all_papers
-from src.services.paper_service import get_summary, save_summary
-from src.services.summarizer import summarize_text
+from backend.monitoring.logger import setup_logging
+
+setup_logging(os.getenv("LOG_LEVEL", "INFO"), json_logs=os.getenv("LOG_FORMAT", "text") == "json")
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+app.json.sort_keys = False      # keep ranked dicts (e.g. feature importances) in the order the server built them
+
+from backend.api.routes.legacy import bp as legacy_bp  # noqa: E402  original PaperLens endpoints (fixed)
+from backend.api.routes.library import bp as library_bp  # noqa: E402
+from backend.api.routes.dashboard import bp as dashboard_bp  # noqa: E402
+from backend.api.routes.retrieval import bp as retrieval_bp  # noqa: E402
+from backend.api.routes.rag import bp as rag_bp  # noqa: E402
+from backend.api.routes.explainability import bp as explain_bp  # noqa: E402
+from backend.api.routes.pipeline import bp as pipeline_bp  # noqa: E402
+from backend.api.routes.health import bp as health_bp  # noqa: E402
+
+for _bp in (legacy_bp, library_bp, dashboard_bp, retrieval_bp, rag_bp, explain_bp, pipeline_bp, health_bp):
+    app.register_blueprint(_bp)
 
 
 @app.route("/")
@@ -16,46 +30,21 @@ def index():
     return render_template("index.html")
 
 
-# SEARCH + SUMMARY API
-@app.route("/api/search")
-def api_search():
-    query = request.args.get("q", "").strip()
-    limit = min(int(request.args.get("limit", 10)), 20)
-
-    if not query:
-        return jsonify({"error": "Missing query"}), 400
-
+def _warm_up():
+    """WARMUP=1: load the retrieval service and the pipeline system in the background so the first user request is fast."""
+    log = logging.getLogger("warmup")
     try:
-        papers = fetch_all_papers(query, limit)
+        from backend.api.routes.pipeline import get_system
+        from backend.api.routes.retrieval import get_production
+        get_production()
+        get_system()
+        log.info("warm-up complete")
+    except Exception:
+        log.exception("warm-up failed (the service will load lazily on first use)")
 
-        results = []
 
-        for p in papers:
-            paper_id = p.get("url")
-
-            # Check if summary exists
-            summary = get_summary(paper_id)
-
-            # If not, generate + store
-            if not summary and p.get("abstract"):
-                summary = summarize_text(p["abstract"])
-                if summary:
-                    save_summary(paper_id, p, summary)
-
-            results.append({
-                "title": p.get("title"),
-                "authors": p.get("authors"),
-                "url": p.get("url"),
-                "source": p.get("source"),
-                "summary": summary or "Summary not available"
-            })
-
-        return jsonify({"results": results})
-
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
-
+if os.getenv("WARMUP") == "1":
+    threading.Thread(target=_warm_up, name="warmup", daemon=True).start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

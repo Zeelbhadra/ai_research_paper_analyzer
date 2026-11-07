@@ -12,9 +12,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/css/app.css">
 </head>
 
 <body>
+    <a class="skip-link" href="#main">Skip to content</a>
 
     <!-- Animated background orbs -->
     <div class="bg-orb bg-orb--1"></div>
@@ -27,13 +29,21 @@
             <span class="header__icon">🔬</span>
             <span class="header__title">PaperLens</span>
         </div>
-        <nav class="header__nav">
-            <a href="#search-section" class="header__link" id="nav-search">Search</a>
-            <a href="#upload-section" class="header__link" id="nav-upload">Upload</a>
-            <a href="#results-section" class="header__link" id="nav-results">Results</a>
+        <nav class="header__nav" aria-label="Main">
+            <a href="#/discover" class="header__link" data-route="discover">Discover</a>
+            <a href="#/dashboard" class="header__link" data-route="dashboard">Dashboard</a>
+            <a href="#/library" class="header__link" data-route="library">Library</a>
+            <a href="#/assistant" class="header__link" data-route="assistant">Assistant</a>
+            <a href="#/benchmarks" class="header__link" data-route="benchmarks">Benchmarks</a>
+            <a href="#/explain" class="header__link" data-route="explain">Explainability</a>
+            <a href="#/pipeline" class="header__link" data-route="pipeline">Pipeline</a>
         </nav>
     </header>
 
+    <div id="status-banner" class="banner" role="status" hidden></div>
+
+    <main id="main">
+    <div class="view" id="view-discover" data-view="discover">
     <!-- Hero Section -->
     <section class="hero" id="hero-section">
         <h1 class="hero__title">
@@ -137,6 +147,19 @@
         </div>
     </section>
 
+    </div>
+
+    <section class="view" id="view-dashboard" data-view="dashboard" hidden></section>
+    <section class="view" id="view-library" data-view="library" hidden></section>
+    <section class="view" id="view-assistant" data-view="assistant" hidden></section>
+    <section class="view" id="view-benchmarks" data-view="benchmarks" hidden></section>
+    <section class="view" id="view-explain" data-view="explain" hidden></section>
+    <section class="view" id="view-pipeline" data-view="pipeline" hidden></section>
+    </main>
+
+    <aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-label="Paper details" hidden></aside>
+    <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+
     <!-- Footer -->
     <footer class="footer" id="footer">
         <p>Built with ❤️ using Flask, HuggingFace Transformers, FAISS &amp; Sentence-Transformers</p>
@@ -146,6 +169,15 @@
     <div id="toast-container" class="toast-container"></div>
 
     <script src="/static/script.js"></script>
+    <script src="/static/js/core.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/view_dashboard.js"></script>
+    <script src="/static/js/view_library.js"></script>
+    <script src="/static/js/view_assistant.js"></script>
+    <script src="/static/js/view_benchmarks.js"></script>
+    <script src="/static/js/view_explain.js"></script>
+    <script src="/static/js/view_pipeline.js"></script>
+    <script>PL.start();</script>
 </body>
 
 </html>

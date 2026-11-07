@@ -1,0 +1,16 @@
+{
+  "_comment": "Policy tolerances and deployment budgets, NOT metric weights. Memory budget is derived from the machine at run time.",
+  "primary_metric": "nDCG@10",
+  "quality_metrics_for_index": ["nDCG@10", "Recall@5", "MRR@10", "Precision@5", "MAP"],
+  "quality_floor": {"nDCG@10": 0.50, "Recall@5": 0.40},
+  "non_inferiority": {"margin": 0.02, "confidence": 0.95, "n_boot": 5000},
+  "budgets": {
+    "latency_p95_ms": 500,
+    "min_qps": 2.0,
+    "reindex_window_seconds": 7200,
+    "memory_fraction_of_available_ram": 0.25
+  },
+  "require_health_check": true,
+  "min_gain_over_current_production": 0.0,
+  "selection_split": "validation"
+}

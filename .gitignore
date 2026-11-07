@@ -2,3 +2,7 @@
 .env.*
 __pycache__/
 *.pyc
+storage/
+.pytest_cache/
+
+!.env.example

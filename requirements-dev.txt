@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest>=8
+# legacy summarisation evaluation (src/evaluation_metrics.py, tests/evaluate_summarizer.py)
+rouge_score
+bert_score
+tqdm
