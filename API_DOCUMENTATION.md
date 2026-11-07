@@ -2,6 +2,18 @@
 
 Base URL `http://localhost:5000`. JSON in and out; errors are `{"error": "..."}` with 400 (bad input), 404, 409 (workflow already running), 422 (unreadable PDF), 503 (retrieval unavailable) or 500. There is **no authentication**: do not expose the pipeline and retrieval-admin endpoints publicly. Responses keep the key order shown (Flask key sorting is off).
 
+## Public vs admin
+By default only the **reader API** is served: `/api/search`, `/api/analyze`, `/api/similar`, `/api/library/*`, `/api/chat`, `/api/chat/stream`, `/healthz`, `/readyz`. The dashboard, benchmark, pipeline, retrieval-admin and RAG-admin endpoints described below are registered **only when `ADMIN_API=1`** and return 404 otherwise. Sections below that describe them are admin-only. `/readyz` returns just `{"status"}` in public mode.
+
+**Reader endpoints added in this version**
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/api/chat` | `{message, history?, paper_ids?}` -> `{answer, kind, sentences[{text,kind,sources}], sources[{n,cited,paper_id,title,pages,section,url,quote,text,highlights}], notes, suggestions, context}`. No model, score or provider fields. |
+| POST | `/api/chat/stream` | same input, server-sent events: `start`, `token`, `final` (the object above), `error` (friendly message). |
+| GET | `/api/library/papers`, `/paper`, `/facets` | processed papers only; cards and detail without chunk or status internals. |
+| POST | `/api/library/add` | `{paper:{title,pdf_url,...}}`: queues download + processing; 422 without a PDF link, 409 if busy, 200 `ready` if already in the library. |
+| GET | `/api/library/add/status` | progress of the add job. |
+
 ## Health
 | Method | Path | Description |
 |---|---|---|

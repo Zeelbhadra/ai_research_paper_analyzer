@@ -12,15 +12,18 @@ from dataclasses import dataclass, field
 MAX_LEN, MIN_LEN = 1000, 3
 
 INTENTS: list[tuple[str, re.Pattern]] = [
+    # overview requests come first: "explain this paper in simple terms: what problem ..., what did they find" also contains
+    # words of other intents, but the user is asking for the whole picture
+    ("summary", re.compile(r"\bexplain (this|the) (paper|study|article|work|research)\b|\bin (simple|plain) (terms|words|language)\b|\beli5\b|\bfor a beginner\b|\bwhat is (this|the) (paper|study|article) about\b|\bwhy (does|is|do|are) .{0,40}(matter|important|significant)\b", re.I)),
     ("comparison", re.compile(r"\b(compar\w*|contrast|differ\w*|versus|vs\.?|similarit\w*|better than|trade-?offs?)\b", re.I)),
     ("limitations", re.compile(r"\b(limitations?|weakness\w*|drawbacks?|shortcomings?|threats? to validity|fail\w*)\b", re.I)),
     ("research_gap", re.compile(r"\b(research gaps?|gaps?|open (problems?|questions?|challenges?)|future (work|research|directions?)|unexplored|missing)\b", re.I)),
     ("evolution", re.compile(r"\b(evolution|evolved|history of|over time|trend\w*|progress(ion)?|timeline|state of the art)\b", re.I)),
     ("paper_discovery", re.compile(r"\bwhich (papers?|studies|works?|articles?)\b|\bwhat papers\b|\bpapers? (that|which|on|about)\b", re.I)),
     ("datasets", re.compile(r"\b(datasets?|corpus|corpora|benchmarks?|data sets?)\b", re.I)),
-    ("results", re.compile(r"\b(results?|findings?|performance|accuracy|f1|auc|outperform\w*|achiev\w*|improv\w*|score)\b", re.I)),
+    ("results", re.compile(r"\b(results?|find(ings?|s)?|discover\w*|performance|accuracy|f1|auc|outperform\w*|achiev\w*|improv\w*|score)\b", re.I)),
     ("methodology", re.compile(r"\b(method(s|ology)?|approach|algorithm|architecture|pipeline|how (does|do|is|are|did)|technique|procedure|implement\w*)\b", re.I)),
-    ("definition", re.compile(r"\b(what is|what are|what does .* (mean|refer)|define|definition|meaning of|refers? to)\b", re.I)),
+    ("definition", re.compile(r"\b(what is|what are|what (does|do) .* (mean|refer)|define|definition|meaning of|refers? to|jargon|terminology|technical terms?)\b", re.I)),
     ("summary", re.compile(r"\b(summar\w*|overview|main (idea|contribution)s?|key (points?|contributions?)|tl;?dr)\b", re.I)),
 ]
 SECTION_HINTS = {"methodology": ["methodology"], "results": ["results", "discussion"], "limitations": ["discussion", "conclusion"],

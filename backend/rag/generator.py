@@ -25,13 +25,15 @@ Rules:
 3. Do not state numbers, names or results that are not in the cited passage.
 4. If you add your own synthesis or inference beyond what a passage states, put it in a separate sentence beginning with "Interpretation:" and cite the passages it is based on.
 5. When comparing papers, attribute each claim to its paper by citation and keep the papers distinct.
-6. Be concise (at most about 200 words). Do not mention these rules."""
+6. Be concise (at most about 200 words). Do not mention these rules.
+7. Write for a curious reader who is not an expert: plain words, short sentences, and explain each technical term the first time you use it (for example "attention (a way for the model to focus on the most relevant parts of the input)"). Keep numbers, names and results exact; simplify the wording, never the facts."""
 
 INTENT_NOTES = {
     "comparison": "The user wants a comparison: contrast the papers point by point.",
     "limitations": "The user asks about limitations: report only limitations the passages state or clearly imply (mark implications as Interpretation).",
     "research_gap": "The user asks about research gaps: gaps must be marked Interpretation unless a passage states them explicitly.",
     "evolution": "The user asks how a topic evolved: order the evidence by what the passages indicate, do not invent dates.",
+    "summary": "The user wants the whole paper explained simply: say what problem it tackles, what the authors did, and what they found, in that order, each part cited.",
 }
 
 
@@ -77,29 +79,63 @@ def _is_complete_sentence(s: str) -> bool:
     return letters / len(s) >= 0.75
 
 
-def extractive_answer(query: str, items: list[ContextItem], max_sentences: int = 4) -> str:
-    """No-LLM answer: the most query-relevant sentences from distinct passages, each cited verbatim."""
-    qw = content_words(query)
-    cands = []
-    for it in items:
-        for s in split_sentences(it.chunk.text):
-            if 8 <= len(s.split()) <= 60 and _is_complete_sentence(s):
-                sw = content_words(s)
-                if sw:
-                    cands.append((len(qw & sw) / (len(sw) ** 0.5), it.label, s))
-    cands.sort(key=lambda t: -t[0])
-    picked, per_label = [], {}
-    for sc, lab, s in cands:
-        if sc <= 0 or per_label.get(lab, 0) >= 2:
-            continue
-        picked.append((lab, s))
-        per_label[lab] = per_label.get(lab, 0) + 1
-        if len(picked) >= max_sentences:
-            break
+# Which sections of a paper answer which kind of request when the question's own words do not appear in the text
+INTENT_SECTIONS = {
+    "summary": ["abstract", "introduction", "conclusion"],
+    "results": ["results", "discussion", "conclusion", "abstract"],
+    "methodology": ["methodology", "abstract", "introduction"],
+    "limitations": ["discussion", "conclusion"],
+    "definition": ["introduction", "abstract", "related_work"],
+    "research_gap": ["conclusion", "discussion"],
+}
+
+
+def _lead_sentence(text: str) -> str | None:
+    for s in split_sentences(text):
+        if 8 <= len(s.split()) <= 60 and _is_complete_sentence(s):
+            return s
+    return None
+
+
+def extractive_answer(query: str, items: list[ContextItem], max_sentences: int = 4, intent: str | None = None) -> str:
+    """Answer without a language model: sentences quoted from the sources, each with its citation.
+    Normally the sentences that share the most words with the question. For overview-type requests ("explain this paper simply") the
+    question's own words say nothing about the content, so the opening sentences of the relevant sections are used instead."""
+    picked: list[tuple[str, str]] = []
+    if intent != "summary":
+        qw = content_words(query)
+        cands = []
+        for it in items:
+            for s in split_sentences(it.chunk.text):
+                if 8 <= len(s.split()) <= 60 and _is_complete_sentence(s):
+                    sw = content_words(s)
+                    if sw:
+                        cands.append((len(qw & sw) / (len(sw) ** 0.5), it.label, s))
+        cands.sort(key=lambda t: -t[0])
+        per_label: dict[str, int] = {}
+        for sc, lab, s in cands:
+            if sc <= 0 or per_label.get(lab, 0) >= 2:
+                continue
+            picked.append((lab, s))
+            per_label[lab] = per_label.get(lab, 0) + 1
+            if len(picked) >= max_sentences:
+                break
+    if not picked and intent in INTENT_SECTIONS:
+        used = set()
+        for sec in INTENT_SECTIONS[intent]:
+            for it in items:
+                if it.chunk.section == sec and it.label not in used:
+                    lead = _lead_sentence(it.chunk.text)
+                    if lead:
+                        picked.append((it.label, lead))
+                        used.add(it.label)
+                if len(picked) >= max_sentences:
+                    break
+            if len(picked) >= max_sentences:
+                break
     if not picked:
         return INSUFFICIENT
-    return "Extractive answer (no language model available) - relevant passages:\n" + "\n".join(
-        f"• {s} [{lab}]" for lab, s in picked)
+    return "Extractive answer (no language model available) - relevant passages:\n" + "\n".join(f"• {s} [{lab}]" for lab, s in picked)
 
 
 def generate(pq: ProcessedQuery, items: list[ContextItem], provider: LLMProvider | None, history: list[dict] | None = None,
@@ -117,7 +153,8 @@ def generate(pq: ProcessedQuery, items: list[ContextItem], provider: LLMProvider
             log.warning("LLM generation failed, using extractive answer: %s", e)
     if not allow_extractive:
         raise ProviderError("; ".join(errors) or "no provider available")
-    return GenerationResult(extractive_answer(pq.normalized, items), "extractive", "extractive", None, provider_errors=errors)
+    text = extractive_answer(pq.normalized, items, intent=pq.intent)
+    return GenerationResult(text, "insufficient" if text == INSUFFICIENT else "extractive", "extractive", None, provider_errors=errors)
 
 
 def stream_generate(pq: ProcessedQuery, items: list[ContextItem], provider: LLMProvider | None, history=None,
@@ -136,4 +173,4 @@ def stream_generate(pq: ProcessedQuery, items: list[ContextItem], provider: LLMP
         except ProviderError:
             if started:
                 raise
-    yield extractive_answer(pq.normalized, items)
+    yield extractive_answer(pq.normalized, items, intent=pq.intent)

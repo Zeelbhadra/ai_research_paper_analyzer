@@ -50,13 +50,7 @@ class ExplainabilityAgent(Agent):
         self.sv, self._exp = sv, None
 
     def actions(self):
-        return {"explain_answer": self.explain_answer, "explain_retrieval": self.explain_retrieval}
+        return {"explain_answer": self.explain_answer}
 
     def explain_answer(self, response: dict) -> dict:
         return {"explanation": explain_answer(response)}
-
-    def explain_retrieval(self, query: str, k: int = 5, with_lime: bool = False) -> dict:
-        if self._exp is None:
-            from backend.explainability.retrieval_explainer import RetrievalExplainer
-            self._exp = RetrievalExplainer(self.sv.get_production())
-        return {"explanation": self._exp.explain(query, k, with_lime)}

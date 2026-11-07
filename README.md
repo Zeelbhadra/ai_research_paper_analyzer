@@ -8,9 +8,10 @@ An upgrade of the original *AI Research Paper Analyzer* into a retrieval-augment
 - **Ingest**: arXiv and Semantic Scholar discovery (pagination, retries, rate limits), cross-source deduplication, open-access PDF download, manual uploads; PyMuPDF/pdfplumber extraction, header/footer removal, section detection, five chunking strategies; every chunk keeps paper, pages, section, URL and embedding version.
 - **Retrieve**: separate TF-IDF and per-model FAISS indexes with cached embeddings; production model chosen by measurement; automatic TF-IDF fallback with health checks and recovery.
 - **Answer**: intent/scope detection, follow-ups, de-duplicated budgeted context, strict grounded prompt, `[S#]` citations, lexical citation verification, refusal when evidence is weak, provider chain (OpenAI, local model, extractive).
-- **Explain**: exact retrieval facts plus SHAP/LIME over an interpretable relevance model; source-grounded answer explanations with highlighted evidence.
+- **Explain the paper**: the assistant explains the *content* of a paper in plain language, each statement tied to the page it comes from (highlighted source passages). SHAP/LIME explained the retrieval model rather than the papers, so they were removed (kept in `archive/`).
 - **Automate**: deterministic orchestrator, six agents, APScheduler, monitoring rules, reports.
-- **UI**: Discover, Dashboard, Library, Assistant, Benchmarks, Explainability, Pipeline monitoring.
+- **UI (readers see three pages)**: **Discover** (enter a topic, get papers; Analyze gives a summary, keywords, related topics and similar papers; add a paper to the library), **Library**, **Assistant** (chatbot that answers in simple terms with cited sources). Model names, scores and pipeline details are never shown to readers.
+- **Admin API**: dashboard, benchmark, pipeline and retrieval-admin endpoints exist but are off unless `ADMIN_API=1` is set (they return 404 otherwise).
 
 ## Headline results (measured; full tables and caveats in EXPERIMENT_RESULTS.md)
 Production: **hybrid TF-IDF + E5** with a TF-IDF fallback. Held-out test nDCG@10: hybrid 0.698, TF-IDF 0.683, E5 0.630, BGE 0.629, SBERT 0.493. The hybrid's edge over TF-IDF is **not statistically significant** (p = 0.44 on test); dense-only models are each worse than the hybrid on test at p < 0.05 (uncorrected for multiple comparisons). TF-IDF is about 33x faster than E5/BGE (1.2 ms vs 39 ms p50). The existing chunking (256 words, 15% overlap, recursive) was the best of nine configurations under a fixed context budget. Cross-paper questions remain weak without explicitly selecting the papers.
@@ -24,7 +25,7 @@ python app.py                                # http://localhost:5000  (first req
 Docker: `docker compose up --build` (see [DEPLOYMENT.md](DEPLOYMENT.md); untested build). To build the data and indexes from scratch, see "Build the data and indexes" in DEPLOYMENT.md.
 
 ## Tests
-`python -m pytest backend/tests` (174 tests: units, integration, API contracts, performance) and, with the app running, `node tests/ui_smoke.mjs http://127.0.0.1:5000 outdir` (drives real Chrome: 13 checks). Real-model runs live in `backend/benchmarking/` (`demo_fallback`, `demo_rag`, `demo_automation`, `explain_demo`, `perf_suite`).
+`python -m pytest backend/tests` (178 tests: units, integration, API contracts, performance) and, with the app running in public mode, `node tests/ui_smoke.mjs http://127.0.0.1:5000 outdir` (drives real Chrome: 22 checks, including that no backend terms appear and admin endpoints return 404). Real-model runs live in `backend/benchmarking/` (`demo_fallback`, `demo_rag`, `demo_automation`, `perf_suite`).
 
 ## Documentation
 | File | Content |
@@ -43,12 +44,12 @@ Docker: `docker compose up --build` (see [DEPLOYMENT.md](DEPLOYMENT.md); unteste
 | 1 Ingestion, extraction, chunking | done; no OCR for scanned PDFs; 3 of 49 supplied PDFs are corrupt |
 | 2 Embedding benchmark, registry, fallback | done for TF-IDF, SBERT, E5, BGE, hybrid; **only FAISS was implemented and used** (Chroma/pgvector were not built or compared, only the interface exists); ROC/PR-AUC apply only to the relevance classifier |
 | 3 RAG | done and tested; exercised end to end only with extractive answers and stubbed model output |
-| 4 Explainability | done (SHAP and LIME on a surrogate relevance model; LIME is a weak local fit, R^2 about 0.3) |
+| 4 Explainability | redirected: content explanation (plain-language answers with highlighted evidence). SHAP/LIME on the relevance model were built, then archived because they explained the model, not the papers |
 | 5 Agents and automation | done as deterministic workflows; no LLM agents by design |
 | 6 RAG evaluation | retrieval evaluation done; **generation metrics (faithfulness, relevance, context precision/recall, groundedness, citation correctness vs humans, cost) not done** |
-| 7 Frontend | done (7 views) |
+| 7 Frontend | done (3 reader pages: Discover, Library, Assistant) |
 | 8 Backend structure and API | done; adapted to the existing repository (`backend/` beside the original `src/`) |
-| 9 Testing | 174 backend tests + 13-check browser smoke test |
+| 9 Testing | 178 backend tests + 22-check browser smoke test |
 | 10 Docker / deployment | files written and validated with `docker compose config`; **image not built or run** |
 | 11 Experimental report | done, including error analysis and statistical comparison; limitations listed |
 

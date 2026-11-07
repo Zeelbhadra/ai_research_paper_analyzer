@@ -118,7 +118,6 @@ def benchmarks_overview():
         "performance": _load("benchmark/performance.json"), "chunk_sweep": {"dev": _load("benchmark/chunk_sweep_dev.json"), "validation": _load("benchmark/chunk_sweep_validation.json")},
         "reranker": _load("benchmark/rerank_benchmark.json"), "paraphrase_probe": _load("benchmark/paraphrase_probe.json"),
         "hybrid_tuning": _load("benchmark/hybrid_tuning_dev.json"),
-        "relevance_model": _load("benchmark/relevance_model_report.json"),
         "dataset": _dataset_card(),
     })
 

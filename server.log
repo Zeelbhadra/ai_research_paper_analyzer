@@ -1,0 +1,153 @@
+ * Serving Flask app 'app'
+ * Debug mode: off
+2026-11-07 20:33:18,788 INFO faiss.loader: Loading faiss with AVX2 support.
+2026-11-07 20:33:19,001 INFO faiss.loader: Successfully loaded faiss with AVX2 support.
+2026-11-07 20:33:20,115 INFO werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.103.195.52:5000
+2026-11-07 20:33:20,116 INFO werkzeug: [33mPress CTRL+C to quit[0m
+2026-11-07 20:33:24,762 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:33:24] "GET / HTTP/1.1" 200 -
+2026-11-07 20:33:25,560 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:33:25] "GET /readyz HTTP/1.1" 200 -
+2026-11-07 20:33:58,470 INFO sentence_transformers.SentenceTransformer: Load pretrained SentenceTransformer: intfloat/e5-base-v2
+2026-11-07 20:33:59,882 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:33:59,938 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/intfloat/e5-base-v2/f52bf8ec8c7124536f0efb74aca902b2995e5bcd/modules.json "HTTP/1.1 200 OK"
+2026-11-07 20:34:00,270 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 404 Not Found"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-07 20:34:00,271 WARNING huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-07 20:34:00,625 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 404 Not Found"
+2026-11-07 20:34:00,915 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:34:00,980 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/intfloat/e5-base-v2/f52bf8ec8c7124536f0efb74aca902b2995e5bcd/README.md "HTTP/1.1 200 OK"
+2026-11-07 20:34:01,260 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:34:01,316 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/intfloat/e5-base-v2/f52bf8ec8c7124536f0efb74aca902b2995e5bcd/modules.json "HTTP/1.1 200 OK"
+2026-11-07 20:34:01,648 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:34:01,715 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/intfloat/e5-base-v2/f52bf8ec8c7124536f0efb74aca902b2995e5bcd/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-11-07 20:34:01,977 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-11-07 20:34:02,277 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:34:02,350 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/intfloat/e5-base-v2/f52bf8ec8c7124536f0efb74aca902b2995e5bcd/config.json "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights:  63%|######3   | 126/199 [00:00<00:00, 1222.54it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 1470.31it/s]
+[1mBertModel LOAD REPORT[0m from: intfloat/e5-base-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+2026-11-07 20:34:03,556 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:34:03,615 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/intfloat/e5-base-v2/f52bf8ec8c7124536f0efb74aca902b2995e5bcd/config.json "HTTP/1.1 200 OK"
+2026-11-07 20:34:03,899 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:34:03,953 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/intfloat/e5-base-v2/f52bf8ec8c7124536f0efb74aca902b2995e5bcd/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-11-07 20:34:04,310 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/intfloat/e5-base-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-11-07 20:34:04,593 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/intfloat/e5-base-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-11-07 20:34:05,158 INFO httpx: HTTP Request: HEAD https://huggingface.co/intfloat/e5-base-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:34:05,218 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/intfloat/e5-base-v2/f52bf8ec8c7124536f0efb74aca902b2995e5bcd/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-11-07 20:34:05,648 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/intfloat/e5-base-v2 "HTTP/1.1 200 OK"
+2026-11-07 20:34:05,730 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:34:05] "GET /api/retrieval/status HTTP/1.1" 200 -
+2026-11-07 20:34:06,481 INFO warmup: warm-up complete
+2026-11-07 20:37:22,580 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:22] "GET / HTTP/1.1" 200 -
+2026-11-07 20:37:22,960 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:22] "GET /static/style.css HTTP/1.1" 200 -
+2026-11-07 20:37:22,976 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:22] "GET /static/js/charts.js HTTP/1.1" 200 -
+2026-11-07 20:37:22,994 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:22] "GET /static/js/view_dashboard.js HTTP/1.1" 200 -
+2026-11-07 20:37:23,068 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "GET /static/script.js HTTP/1.1" 200 -
+2026-11-07 20:37:23,069 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "GET /static/css/app.css HTTP/1.1" 200 -
+2026-11-07 20:37:23,071 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "GET /static/js/core.js HTTP/1.1" 200 -
+2026-11-07 20:37:23,301 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "GET /static/js/view_library.js HTTP/1.1" 200 -
+2026-11-07 20:37:23,321 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "GET /static/js/view_assistant.js HTTP/1.1" 200 -
+2026-11-07 20:37:23,331 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "GET /static/js/view_benchmarks.js HTTP/1.1" 200 -
+2026-11-07 20:37:23,390 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "GET /static/js/view_explain.js HTTP/1.1" 200 -
+2026-11-07 20:37:23,392 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "GET /static/js/view_pipeline.js HTTP/1.1" 200 -
+2026-11-07 20:37:23,723 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-11-07 20:37:23,734 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:37:23] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:48:21,458 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET / HTTP/1.1" 200 -
+2026-11-07 20:48:21,548 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/style.css HTTP/1.1" 200 -
+2026-11-07 20:48:21,555 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/script.js HTTP/1.1" 200 -
+2026-11-07 20:48:21,556 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/css/app.css HTTP/1.1" 200 -
+2026-11-07 20:48:21,558 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/js/core.js HTTP/1.1" 200 -
+2026-11-07 20:48:21,562 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/js/charts.js HTTP/1.1" 200 -
+2026-11-07 20:48:21,564 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/js/view_dashboard.js HTTP/1.1" 200 -
+2026-11-07 20:48:21,566 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/js/view_library.js HTTP/1.1" 200 -
+2026-11-07 20:48:21,569 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/js/view_assistant.js HTTP/1.1" 200 -
+2026-11-07 20:48:21,575 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/js/view_benchmarks.js HTTP/1.1" 200 -
+2026-11-07 20:48:21,578 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/js/view_explain.js HTTP/1.1" 200 -
+2026-11-07 20:48:21,581 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:21] "GET /static/js/view_pipeline.js HTTP/1.1" 200 -
+2026-11-07 20:48:22,153 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:22] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:48:22,407 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:22] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-11-07 20:48:36,800 INFO arxiv: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=machine&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=100
+2026-11-07 20:48:40,218 INFO arxiv: Got first page: 100 of 387426 total results
+2026-11-07 20:48:45,004 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:45] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:48:45,037 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:45] "GET /api/benchmarks/overview HTTP/1.1" 200 -
+2026-11-07 20:48:47,450 INFO httpx: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-11-07 20:48:47,452 INFO openai._base_client: Retrying request to /chat/completions in 0.396344 seconds
+2026-11-07 20:48:48,739 INFO httpx: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-11-07 20:48:48,748 WARNING backend.api.routes.legacy: OpenAI summaries disabled for 600s: openai: RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue 
+2026-11-07 20:48:48,830 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:48:48] "GET /api/search?q=machine&source=all&limit=12 HTTP/1.1" 200 -
+2026-11-07 20:49:34,371 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:49:34] "GET /api/library/facets HTTP/1.1" 200 -
+2026-11-07 20:49:34,384 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:49:34] "GET /api/library/papers?status=processed&limit=24&offset=0 HTTP/1.1" 200 -
+2026-11-07 20:49:42,167 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:49:42] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:50:35,173 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:50:35] "GET /api/benchmarks/overview HTTP/1.1" 200 -
+2026-11-07 20:50:42,166 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:50:42] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:50:43,824 WARNING shap: Background dataset has 200 samples but max_samples=100. Subsampling to 100 samples for SHAP value computation. To use all samples, set max_samples=200 when initializing the masker.
+2026-11-07 20:50:43,849 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:50:43] "GET /api/explain/model HTTP/1.1" 200 -
+2026-11-07 20:50:53,086 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:50:53] "GET /api/pipeline/status HTTP/1.1" 200 -
+2026-11-07 20:50:53,091 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:50:53] "GET /api/pipeline/jobs?limit=60 HTTP/1.1" 200 -
+2026-11-07 20:50:53,100 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:50:53] "GET /api/pipeline/failures HTTP/1.1" 200 -
+2026-11-07 20:50:53,104 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:50:53] "GET /api/retrieval/events HTTP/1.1" 200 -
+2026-11-07 20:50:53,162 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:50:53] "GET /api/benchmarks/overview HTTP/1.1" 200 -
+2026-11-07 20:50:53,181 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:50:53] "GET /api/pipeline/report HTTP/1.1" 200 -
+2026-11-07 20:51:02,166 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:51:02] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:51:11,187 INFO sentence_transformers.SentenceTransformer: Use pytorch device_name: cpu
+2026-11-07 20:51:11,191 INFO sentence_transformers.SentenceTransformer: Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-11-07 20:51:11,683 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:11,725 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-11-07 20:51:12,094 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:12,159 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-11-07 20:51:12,479 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:12,529 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-11-07 20:51:12,912 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:12,989 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md "HTTP/1.1 200 OK"
+2026-11-07 20:51:13,313 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:13,372 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-11-07 20:51:13,679 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:13,766 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-11-07 20:51:14,020 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-11-07 20:51:14,399 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:14,627 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+[MongoDB ERROR] The DNS query name does not exist: _mongodb._tcp.cluster0.lngfdtl.mongodb.net.
+[Semantic ERROR] 429 Client Error:  for url: https://api.semanticscholar.org/graph/v1/paper/search?query=machine&limit=12&fields=title%2Cabstract%2Cauthors%2Cyear%2CcitationCount%2Curl%2CexternalIds
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 2535.04it/s]
+[1mBertModel LOAD REPORT[0m from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+2026-11-07 20:51:15,039 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:15,178 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-11-07 20:51:15,462 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:15,599 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-11-07 20:51:15,865 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-11-07 20:51:16,203 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-11-07 20:51:16,816 INFO httpx: HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:16,861 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-11-07 20:51:17,225 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-11-07 20:51:18,470 INFO httpx: HTTP Request: HEAD https://huggingface.co/facebook/bart-large-mnli/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-11-07 20:51:18,517 INFO httpx: HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/facebook/bart-large-mnli/d7645e127eaf1aefc7862fd59a17a5aa8558b8ce/config.json "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/515 [00:00<?, ?it/s]Loading weights:  38%|###8      | 197/515 [00:00<00:00, 1969.67it/s]Loading weights:  86%|########6 | 444/515 [00:00<00:00, 2253.28it/s]Loading weights: 100%|##########| 515/515 [00:00<00:00, 2253.25it/s]
+2026-11-07 20:51:19,358 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-11-07 20:51:19,678 INFO httpx: HTTP Request: GET https://huggingface.co/api/models/facebook/bart-large-mnli/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-11-07 20:51:38,131 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:51:38] "POST /api/analyze HTTP/1.1" 200 -
+2026-11-07 20:51:40,025 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:51:40] "POST /api/similar HTTP/1.1" 200 -
+2026-11-07 20:52:02,296 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:52:02] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:52:04,215 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:52:04] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:52:04,224 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:52:04] "GET /api/benchmarks/overview HTTP/1.1" 200 -
+2026-11-07 20:52:05,980 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:52:05] "GET /api/library/papers?status=processed&limit=24&offset=0 HTTP/1.1" 200 -
+2026-11-07 20:53:36,291 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:53:36] "POST /api/analyze HTTP/1.1" 200 -
+2026-11-07 20:53:37,426 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:53:37] "POST /api/similar HTTP/1.1" 200 -
+2026-11-07 20:53:42,581 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:53:42] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:53:50,297 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:53:50] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:53:50,306 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:53:50] "GET /api/benchmarks/overview HTTP/1.1" 200 -
+2026-11-07 20:53:51,078 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:53:51] "GET /api/library/papers?status=processed&limit=24&offset=0 HTTP/1.1" 200 -
+2026-11-07 20:54:02,154 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:54:02] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:54:22,168 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:54:22] "GET /api/dashboard HTTP/1.1" 200 -
+2026-11-07 20:56:57,746 INFO werkzeug: 127.0.0.1 - - [07/Nov/2026 20:56:57] "GET /api/library/papers?status=processed&limit=24&offset=0 HTTP/1.1" 200 -

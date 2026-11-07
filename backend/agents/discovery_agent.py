@@ -23,7 +23,7 @@ class DiscoveryAgent(Agent):
         self.sv, self._sources, self._download, self._sleep = sv, {"arxiv": arxiv_search, "semantic_scholar": s2_search}, downloader, sleep
 
     def actions(self):
-        return {"search": self.search, "download": self.download}
+        return {"search": self.search, "download": self.download, "register": self.register}
 
     def search(self, topic: str, max_results: int = 10, sources: list[str] | None = None) -> dict:
         if not topic or not topic.strip():
@@ -53,6 +53,21 @@ class DiscoveryAgent(Agent):
         self.sv.events.emit("discovery", topic=topic, found=len(found), new=len(fresh), sources=status)
         return {"topic": topic, "found": len(found), "new": len(fresh), "duplicates": len(found) - len(fresh),
                 "new_paper_ids": [p.paper_id for p in fresh], "source_status": status, "partial": not all(v["ok"] for v in status.values())}
+
+    def register(self, paper: dict) -> dict:
+        """Store one paper chosen by a user (from search results) so it can be downloaded and read. Re-uses the id of a known duplicate."""
+        from backend.ingestion.models import PaperRecord
+        rec = PaperRecord(**{k: v for k, v in paper.items() if k in PaperRecord.__dataclass_fields__})
+        hit = Deduplicator(self.sv.repo.list_papers()).find(rec)
+        if hit is not None:
+            if hit.status != "processed":                       # retry a failed/incomplete earlier attempt
+                hit.pdf_url = hit.pdf_url or rec.pdf_url
+                hit.status = "discovered"
+                self.sv.repo.upsert_paper(hit)
+            return {"paper_ids": [hit.paper_id], "already_known": True}
+        rec.paper_id, rec.status = paper_key(rec), "discovered"
+        self.sv.repo.upsert_paper(rec)
+        return {"paper_ids": [rec.paper_id], "already_known": False}
 
     def download(self, paper_ids: list[str], delay_s: float | None = None) -> dict:
         """Downloads only the open-access PDF URL a source provided; never scrapes or bypasses access controls."""

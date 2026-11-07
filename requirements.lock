@@ -19,8 +19,6 @@ sentence-transformers==5.2.3
 faiss-cpu==1.13.2
 keybert==0.9.0
 openai==2.29.0
-shap==0.52.0
-lime==0.2.0.1
 apscheduler==3.11.3
 pymongo==4.16.0
 dnspython==2.8.0

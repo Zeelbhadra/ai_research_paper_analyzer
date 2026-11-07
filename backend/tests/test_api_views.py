@@ -40,46 +40,63 @@ def test_json_keeps_server_order(client):
         assert list(json.loads(jsonify({"zeta": 1, "alpha": 2}).get_data())) == ["zeta", "alpha"]
 
 
-# ---------------- legacy endpoints ----------------
-def test_legacy_search_validation(client):
+# ---------------- discover endpoints ----------------
+def paper_rec(title, source="arxiv", pdf="http://x/p.pdf", year="2023-01-01", **kw):
+    from backend.ingestion.models import PaperRecord
+    return PaperRecord(title=title, source=source, abstract="An abstract about " + title + ". It is long enough to analyze properly.", authors=["A. Author"],
+                       published=year, abs_url=kw.pop("abs_url", "http://arxiv.org/abs/2301.00001"), pdf_url=pdf, **kw)
+
+
+def test_search_validation(client):
     assert client.get("/api/search").status_code == 400
     assert client.get("/api/search?q=" + "x" * 400).status_code == 400
     assert client.get("/api/search?q=attention&limit=abc").status_code == 400
-    assert client.get("/api/search?q=attention&source=pubmed").status_code == 400
 
 
-def test_legacy_search_contract_and_source_filter(client, monkeypatch):
-    import src.services.paper_fetcher as pf
-    import src.services.paper_service as ps
-    calls = []
-    monkeypatch.setattr(pf, "fetch_arxiv", lambda q, n: calls.append("arxiv") or [{"title": "A", "authors": ["x"], "abstract": "First sentence is long enough to count. Second one too. " * 3, "url": "http://a", "source": "arxiv"}])
-    monkeypatch.setattr(pf, "fetch_semantic_scholar", lambda q, n: calls.append("s2") or [])
-    monkeypatch.setattr(ps, "get_summary", lambda pid: None)
-    monkeypatch.setattr(ps, "save_summary", lambda *a, **k: None)
-    from backend.api.routes import legacy
-    monkeypatch.setitem(legacy._BREAKER, "until", 1e18)                        # no network: use the extractive summariser
-    d = client.get("/api/search?q=attention&source=arxiv").get_json()
-    assert calls == ["arxiv"] and d["count"] == 1 and d["results"][0]["abstract"] and d["results"][0]["summary"]
-    assert set(d["results"][0]) >= {"title", "authors", "abstract", "url", "source", "summary"}
+def test_search_contract_dedup_interleave_and_in_library(client, monkeypatch, lib):
+    repo, _ = lib
+    add_paper(repo, "arxiv:2301.00001", "Attention Is All You Need Reloaded", ["X"], "2023-01-01")
+    import backend.ingestion.arxiv_client as ac
+    import backend.ingestion.semantic_scholar_client as sc
+    monkeypatch.setattr(ac, "search_arxiv", lambda q, n, **k: iter([paper_rec("Attention Is All You Need Reloaded"), paper_rec("Graph Matching Solvers For Vision", abs_url="http://arxiv.org/abs/2301.00002")]))
+    monkeypatch.setattr(sc, "search_semantic_scholar", lambda q, n, **k: iter([paper_rec("attention is all you need reloaded.", source="semantic_scholar"), paper_rec("Ride Sharing With Autonomous Vehicles", source="semantic_scholar", abs_url="http://s2/3")]))
+    d = client.get("/api/search?q=attention&limit=10").get_json()
+    titles = [r["title"] for r in d["results"]]
+    assert d["count"] == 3 and len(set(t.lower().strip(".") for t in titles)) == 3                  # the same paper from two sources appears once
+    first = d["results"][0]
+    assert first["in_library"] == "arxiv:2301.00001" and d["results"][1]["in_library"] is None
+    assert set(first) == {"title", "authors", "abstract", "url", "pdf_url", "source", "year", "venue", "citation_count", "doi", "in_library"}
 
 
-def test_legacy_analyze_validation_and_success(client, monkeypatch):
+def test_search_survives_one_source_failing(client, monkeypatch, lib):
+    import backend.ingestion.arxiv_client as ac
+    import backend.ingestion.semantic_scholar_client as sc
+    monkeypatch.setattr(ac, "search_arxiv", lambda q, n, **k: iter([paper_rec("Only Arxiv Answers This Time")]))
+    monkeypatch.setattr(sc, "search_semantic_scholar", lambda q, n, **k: iter([]))                 # rate-limited source yields nothing
+    assert client.get("/api/search?q=x+y").get_json()["count"] == 1
+
+
+def test_analyze_validation_and_success(client, monkeypatch):
     assert client.post("/api/analyze", json={"text": "short"}).status_code == 400
     from io import BytesIO
     assert client.post("/api/analyze", data={"file": (BytesIO(b"hello"), "x.txt")}, content_type="multipart/form-data").status_code == 400
     assert client.post("/api/analyze", data={"file": (BytesIO(b"not a pdf" * 300), "x.pdf")}, content_type="multipart/form-data").status_code == 422
     import src.keyword_extractor as ke
     import src.topic_classifier as tc
-    monkeypatch.setattr(ke, "extract_keywords", lambda t, top_n=10: [("graph matching", 0.8)])
-    monkeypatch.setattr(tc, "classify_topic", lambda t, labels=None, top_n=5: [{"label": "Computer Vision", "score": 0.9}])
+    from backend.api.routes import legacy
+    monkeypatch.setitem(legacy._BREAKER, "until", 1e18)                                              # extractive summary, no network
+    monkeypatch.setattr(ke, "extract_keywords", lambda t, top_n=10: [("graph matching", 0.8), ("keypoints", 0.5)])
+    seen = {}
+    monkeypatch.setattr(tc, "classify_topic", lambda t, labels=None, top_n=5: seen.update(labels=labels) or [{"label": "Computer Vision", "score": 0.9}])
     text = "We study graph matching for computer vision. The method aligns keypoints across images using a learned affinity. " * 4
     d = client.post("/api/analyze", json={"text": text}).get_json()
-    assert d["summary"] and d["keywords"] == [{"word": "graph matching", "score": 0.8}] and d["topics"][0]["label"] == "Computer Vision"
+    assert d["summary"] and d["keywords"][0]["word"] == "graph matching" and d["topics"][0]["label"] == "Computer Vision" and d["search_hint"] == "graph matching keypoints"
+    assert seen["labels"] and "Machine Learning" in seen["labels"]                                  # the configured, informative taxonomy, not "Computer Science"
     pdf = client.post("/api/analyze", data={"file": (BytesIO(make_pdf_bytes()), "p.pdf")}, content_type="multipart/form-data")
     assert pdf.status_code == 200 and pdf.get_json()["pages"] == 6
 
 
-def test_legacy_similar_returns_one_row_per_paper(client, monkeypatch):
+def test_similar_returns_one_row_per_paper_without_backend_fields(client, monkeypatch):
     from backend.api.routes import retrieval
 
     class Svc:
@@ -94,7 +111,7 @@ def test_legacy_similar_returns_one_row_per_paper(client, monkeypatch):
             return {"mode": "primary", "results": [r("a1", "A"), r("a2", "A"), r("b1", "B")]}
     monkeypatch.setattr(retrieval, "get_production", lambda: Prod())
     d = client.post("/api/similar", json={"text": "graph matching of keypoints for deformable shapes"}).get_json()
-    assert [s["paper"]["paper_id"] for s in d["similar"]] == ["A", "B"] and d["similar"][0]["similarity"] == 0.9
+    assert [s["paper_id"] for s in d["similar"]] == ["A", "B"] and set(d["similar"][0]) == {"paper_id", "title", "url", "closeness"}
     assert client.post("/api/similar", json={"text": "x"}).status_code == 400
 
 
@@ -106,18 +123,44 @@ def test_library_filters_detail_and_facets(client, lib):
     add_paper(repo, "file:x", "Uploaded Paper Without Metadata", [], None)
     add_paper(repo, "arxiv:cs/0301001", "Failed One", [], None, status="failed")
     g = lambda qs: client.get("/api/library/papers?" + qs).get_json()
-    assert g("")["total"] == 4 and g("status=processed")["total"] == 3
-    assert [p["title"] for p in g("q=ride&status=processed")["papers"]] == ["Ride Sharing Pricing"]
+    assert g("")["total"] == 3                                                                      # only readable papers are listed
+    assert [p["title"] for p in g("q=ride")["papers"]] == ["Ride Sharing Pricing"]
     assert g("author=lovelace")["total"] == 1 and g("topic=transport")["total"] == 1
-    assert g("year_from=2022")["total"] == 1 and g("year_to=2021")["total"] == 1             # papers without a year never match a year filter
-    assert g("q=graph matching")["papers"][0]["keywords"] == ["graph matching"]               # keywords are searchable
+    assert g("year_from=2022")["total"] == 1 and g("year_to=2021")["total"] == 1                    # papers without a year never match a year filter
+    assert g("q=graph matching")["papers"][0]["keywords"] == ["graph matching"]
     assert client.get("/api/library/papers?limit=zz").status_code == 400
+    card = g("q=graph")["papers"][0]
+    assert not ({"n_chunks", "status", "chunk_id", "source", "category"} & set(card))                # no backend fields
     d = client.get("/api/library/paper?id=arxiv:2401.00001").get_json()
-    assert d["n_chunks"] == 2 and [s["name"] for s in d["sections"]] == ["abstract", "methodology"] and d["sections"][1]["chunks"][0]["pages"] == [2, 2]
-    assert client.get("/api/library/paper?id=arxiv:cs/0301001").status_code == 200           # ids may contain ':' and '/'
+    assert [s["name"] for s in d["sections"]] == ["abstract", "methodology"] and d["sections"][1]["chunks"][0]["pages"] == [2, 2]
+    assert d["topics"] == [{"label": "Computer Vision", "score": 0.9}] and "chunk_id" not in d["sections"][0]["chunks"][0]
+    assert client.get("/api/library/paper?id=arxiv:cs/0301001").status_code == 404                  # unreadable papers are not exposed
     assert client.get("/api/library/paper?id=nope").status_code == 404
     f = client.get("/api/library/facets").get_json()
-    assert ["Ada Lovelace", 1] in f["authors"] and [2024, 1] in [list(y) for y in f["years"]]
+    assert ["Ada Lovelace", 1] in f["authors"] and set(f) == {"years", "authors", "topics"}
+
+
+def test_add_to_library_validation_status_and_duplicates(client, monkeypatch, lib):
+    repo, _ = lib
+    assert client.post("/api/library/add", json={"title": "x"}).status_code == 400
+    r = client.post("/api/library/add", json={"title": "A Paper Without Any Open Access PDF", "abstract": "abstract"})
+    assert r.status_code == 422 and "open-access" in r.get_json()["error"]
+    add_paper(repo, "arxiv:2301.00001", "Already Here In The Library", ["X"], "2023-01-01")
+    ok = client.post("/api/library/add", json={"title": "Already Here In The Library", "pdf_url": "http://x/p.pdf", "url": "http://arxiv.org/abs/2301.00001"})
+    assert ok.status_code == 200 and ok.get_json() == {"status": "ready", "paper_id": "arxiv:2301.00001"}
+    submitted = {}
+
+    class Orch:
+        def submit(self, name, params):
+            submitted.update(name=name, params=params)
+    from backend.api.routes import pipeline
+    monkeypatch.setattr(pipeline, "get_system", lambda: (None, Orch(), None))
+    new = client.post("/api/library/add", json={"title": "A Brand New Paper To Read", "pdf_url": "http://x/new.pdf", "url": "http://arxiv.org/abs/2399.00009", "authors": ["Z"]})
+    assert new.status_code == 202 and new.get_json()["status"] == "adding" and submitted["name"] == "ingest_paper"
+    assert submitted["params"]["paper"]["pdf_url"] == "http://x/new.pdf" and submitted["params"]["paper"]["title"] == "A Brand New Paper To Read"
+    st = client.get("/api/library/add/status?id=arxiv:2301.00001").get_json()
+    assert st["status"] == "ready" and "ask the assistant" in st["message"].lower()
+    assert client.get("/api/library/add/status?id=nope").status_code == 404
 
 
 # ---------------- dashboard / benchmarks ----------------
@@ -168,13 +211,6 @@ def test_overview_without_any_benchmark_does_not_crash(client, lib):
 
 
 # ---------------- explain / pipeline ----------------
-def test_explain_response_endpoint(client):
-    assert client.post("/api/explain/response", json={"response": {"answer": "x"}}).status_code == 400
-    ok = {"answer": "a", "answer_mode": "llm", "references": [], "sentences": [{"text": "Hello world again.", "citations": [], "invalid_citations": [], "status": "uncited_claim", "support": None, "supporting_label": None}]}
-    d = client.post("/api/explain/response", json={"response": ok}).get_json()
-    assert d["sentences"][0]["kind"] == "unverified" and "No valid citation" in d["sentences"][0]["warning"]
-
-
 def test_pipeline_failures_hide_local_paths(client, monkeypatch, tmp_path):
     from backend.api.routes import pipeline
     repo = Repository(tmp_path / "f.sqlite")

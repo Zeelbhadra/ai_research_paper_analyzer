@@ -28,5 +28,9 @@
  "min_coverage_lexical": 0.625,
  "use_reranker": false,
  "cross_doc_depth": 20,
- "cross_doc_max_docs": null
+ "cross_doc_max_docs": null,
+ "min_dense_cosine_scoped": 0.72,
+ "scoped_calibration": {
+  "note": "20 papers x 7 generic in-paper questions vs 8 off-topic questions (both written by the assistant); with a paper selected, generic questions score 0.72-0.78 so the global threshold (0.8225) would refuse all of them. 0.74 kept 94% of generic and refused 81% of off-topic questions; overview ('explain/summarize this paper') requests skip the gate. Revised to 0.72 after real use: at 0.74 even clear in-paper questions such as 'What did the authors find?' were refused for some papers (they score 0.73-0.74); 0.72 kept 99% of generic in-paper questions and refused 52% of off-topic ones on the same data, and the passages-only answer additionally requires word overlap with the question."
+ }
 }

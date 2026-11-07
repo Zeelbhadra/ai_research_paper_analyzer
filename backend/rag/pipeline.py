@@ -33,6 +33,7 @@ class RAGConfig:
     min_supported_fraction: float = 0.5        # ... nor are answers whose citations mostly fail the lexical support check
     use_reranker: bool = False                 # flipped on only if rerank_benchmark.json says adopt
     min_dense_cosine: float | None = None      # primary evidence gate (calibrated per model version)
+    min_dense_cosine_scoped: float | None = None  # same gate when the user selected paper(s): generic in-paper questions score lower
     dense_model_version: str | None = None
     min_coverage: float | None = None          # weak lexical gate, used only when the dense signal is unavailable
 
@@ -42,6 +43,7 @@ class RAGConfig:
         if CALIBRATION_PATH.exists():
             d = json.loads(CALIBRATION_PATH.read_text())
             c.min_dense_cosine, c.dense_model_version = d.get("min_dense_cosine"), d.get("dense_model_version")
+            c.min_dense_cosine_scoped = d.get("min_dense_cosine_scoped")
             c.min_coverage = d.get("min_coverage_lexical")
             c.use_reranker = bool(d.get("use_reranker", False))
             c.cross_doc_depth = int(d.get("cross_doc_depth", c.cross_doc_depth))
@@ -69,6 +71,8 @@ class RAGPipeline:
             res = self.r.service.retrieve(pq.retrieval_query, depth, make_filter(self.r.meta, set(pq.document_ids) or None, secs))
             hits = res.hits
         cands = [(self.r.chunks[h.chunk_id], h.score, h.rank) for h in hits if h.chunk_id in self.r.chunks]
+        if pq.intent == "summary" and len(pq.document_ids) == 1:
+            cands = self._overview_first(pq.document_ids[0], cands)
         t_ret = time.perf_counter() - t
         t_rr = 0.0
         if self.cfg.use_reranker and self.reranker is not None and cands:
@@ -76,6 +80,20 @@ class RAGPipeline:
             cands = self.reranker.rerank(pq.retrieval_query, cands)
             t_rr = time.perf_counter() - t
         return res, cands, t_ret, t_rr
+
+    def _overview_first(self, doc_id: str, cands: list) -> list:
+        """'Explain this paper' needs the paper's framing, not whatever passages happen to match generic words: put the
+        abstract, introduction and conclusion first, then the retrieved passages."""
+        order = {"abstract": 0, "introduction": 1, "conclusion": 2}
+        picked = sorted((c for c in self.r.chunks.values() if c.document_id == doc_id and c.section in order),
+                        key=lambda c: (order[c.section], c.chunk_index))
+        take, seen = [], set()
+        for sec in ("abstract", "introduction", "conclusion"):
+            for c in [c for c in picked if c.section == sec][:2 if sec != "conclusion" else 1]:
+                take.append(c)
+                seen.add(c.chunk_id)
+        merged = [(c, 1.0, i + 1) for i, c in enumerate(take)] + [x for x in cands if x[0].chunk_id not in seen]
+        return [(c, s, i + 1) for i, (c, s, _) in enumerate(merged)]
 
     def _context(self, pq: ProcessedQuery, cands) -> ContextResult:
         return build_context(pq.retrieval_query, cands, self.cfg.max_chunks, self.cfg.max_words,
@@ -88,10 +106,14 @@ class RAGPipeline:
         info = {"gate": "none", "signal": None, "threshold": None}
         if not ctx.items:
             return False, {**info, "gate": "empty"}
-        if self.cfg.min_dense_cosine is not None:
+        scoped = bool(pq.document_ids)
+        if scoped and pq.intent == "summary":          # the user picked the paper and asked for an overview: nothing to second-guess
+            return True, {**info, "gate": "scoped_overview"}
+        thr = self.cfg.min_dense_cosine_scoped if (scoped and self.cfg.min_dense_cosine_scoped is not None) else self.cfg.min_dense_cosine
+        if thr is not None:
             sig, ver = self.r.service.evidence_signal(pq.retrieval_query, [c[0].chunk_id for c in cands[:5]])
             if sig is not None and ver == self.cfg.dense_model_version:
-                return sig >= self.cfg.min_dense_cosine, {"gate": "dense_cosine", "signal": round(sig, 4), "threshold": self.cfg.min_dense_cosine}
+                return sig >= thr, {"gate": "dense_cosine", "signal": round(sig, 4), "threshold": thr}
         if self.cfg.min_coverage is not None:
             return ctx.coverage >= self.cfg.min_coverage, {"gate": "lexical_coverage(weak)", "signal": round(ctx.coverage, 3), "threshold": self.cfg.min_coverage}
         return True, info
@@ -133,7 +155,7 @@ class RAGPipeline:
             elif not analysis.all_citations_valid:
                 bad = "answer cites sources that do not exist"
             if bad:
-                alt = extractive_answer(pq.normalized, ctx.items)
+                alt = extractive_answer(pq.normalized, ctx.items, intent=pq.intent)
                 info = {"verified": False, "replaced": True, "llm_answer": gen.text, "reason": bad}
                 gen = GenerationResult(alt, "extractive" if alt != INSUFFICIENT else "insufficient", "extractive", None,
                                        provider_errors=gen.provider_errors + [f"LLM answer rejected: {bad}"],

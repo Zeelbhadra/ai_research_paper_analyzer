@@ -1,5 +1,9 @@
+import os
 import sys
 from pathlib import Path
+
+# The module-level app registers the admin/diagnostic routes so existing tests can exercise them; the public-only app is tested via create_app(False).
+os.environ.setdefault("ADMIN_API", "1")
 
 import pytest
 

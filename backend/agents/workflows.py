@@ -18,6 +18,14 @@ WORKFLOWS: dict[str, list[Step]] = {
         Step("index", "document", "update_indexes", when="process.processed"),
         Step("refresh", "research", "refresh", when="process.processed"),
     ],
+    # one paper chosen by a reader: register -> download -> read -> index -> make it available to the assistant
+    "ingest_paper": [
+        Step("register", "discovery", "register", inputs={"paper": "params.paper"}, retries=0),
+        Step("download", "discovery", "download", inputs={"paper_ids": "register.paper_ids"}, params={"delay_s": 0}),
+        Step("process", "document", "process", inputs={"paper_ids": "download.ready_ids"}, when="download.ready_ids"),
+        Step("index", "document", "update_indexes", when="process.processed"),
+        Step("refresh", "research", "refresh", when="process.processed"),
+    ],
     # manual uploads follow the same path from extraction on
     "ingest_uploads": [
         Step("process", "document", "process_files", inputs={"paths": "params.paths"}),

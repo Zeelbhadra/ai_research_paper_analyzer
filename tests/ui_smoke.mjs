@@ -1,7 +1,7 @@
-// Browser smoke test driving the real UI through Chrome DevTools Protocol (Node >= 22, no dependencies).
-//   1. start the app:   PORT=5055 python app.py
+// Browser smoke test driving the reader-facing UI through Chrome DevTools Protocol (Node >= 22, no dependencies).
+//   1. start the app (public mode):   PORT=5055 python app.py
 //   2. node tests/ui_smoke.mjs [baseUrl] [outDir]            (CHROME env var overrides the browser path)
-// Exits non-zero if any check fails; writes screenshots to outDir.
+// Exits non-zero if any check fails; writes screenshots to outDir. Uses the live arXiv API for the Discover checks.
 import { spawn } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -42,97 +42,91 @@ async function shot(name) {
 }
 const go = async (hash) => { await send("Page.navigate", { url: `${BASE}/#/${hash}` }); await sleep(600); await send("Page.reload"); await sleep(1200); };
 
-// An answer is complete when the newest assistant bubble has its metadata line (or an error alert) and the composer is free.
-const ANSWER_DONE = `(() => { const m = [...document.querySelectorAll('#view-assistant .msg--bot')].pop(); return !!m && (!!m.querySelector('.msg__meta') || !!m.querySelector('[role=alert]')) && document.querySelector('#view-assistant .composer button').disabled === false; })()`;
 const results = []; const check = (name, ok, detail = "") => { results.push({ name, ok: !!ok, detail }); console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? "  -  " + detail : ""}`); };
-async function step(name, fn) { try { await fn(); } catch (e) { check(name, false, String(e.message || e).slice(0, 200)); } }
+async function step(name, fn) { try { await fn(); } catch (e) { check(name, false, String(e.message || e).slice(0, 220)); } }
+
+// Words that would reveal how the system works. Checked on interface text (buttons, headings, notes, labels), not on paper content.
+const CHROME_TEXT = `[...document.querySelectorAll('button:not(.chart__toggle), .view__title, .view__lead, .hero__title, .hero__subtitle, .note, .toast, summary, label, .section__title, h3, .header, .footer')].map(e => e.innerText).join(' | ')`;
+const FORBIDDEN = `/tf-?idf|hybrid|sbert|\\be5\\b|\\bbge\\b|faiss|embedding|cosine|fallback|retriev|ndcg|latency|\\brank\\b|\\bscore\\b|provider|openai|extractive|language model|shap|lime\\b|benchmark|pipeline|dashboard/i`;
+const leaks = async () => ev(`(${FORBIDDEN}).exec(${CHROME_TEXT})?.[0] || ''`);
+const ANSWER_DONE = `(() => { const m = [...document.querySelectorAll('#view-assistant .msg--bot')].pop(); return !!m && !m.textContent.includes('Reading the paper') && document.querySelector('#view-assistant .composer button').disabled === false; })()`;
+const ask = async (q) => { await ev(`(() => { const t = document.querySelector('#view-assistant textarea'); t.value = ${JSON.stringify(q)}; document.querySelector('#view-assistant .composer button').click(); })()`); await sleep(500); await waitFor(ANSWER_DONE, 240000, "assistant answer"); };
 
 await connect();
 await send("Page.enable"); await send("Runtime.enable");
 await send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
 
-await step("every route renders without JS errors", async () => {
-    const stray = [];
-    for (const r of ["discover", "dashboard", "library", "benchmarks", "pipeline", "explain", "assistant"]) {
-        await go(r); await sleep(2500);
-        const bad = await ev(`(document.getElementById('view-${r}').innerText.match(/\b(null|undefined|NaN)\b/g) || []).length`);
-        if (bad) stray.push(r + ":" + bad);
-    }
-    check("no stray 'null'/'undefined'/'NaN' text on any view", stray.length === 0, stray.join(", "));
-    check("every route renders without JS errors", jsErrors.length === 0, jsErrors.slice(0, 2).join(" | "));
-});
-
-await step("assistant: grounded answer with citations and evidence", async () => {
-    await go("assistant");
-    await ev(`(() => { const t = document.querySelector('#view-assistant textarea'); t.value = 'How does the Swin Transformer reduce the computational complexity of self-attention?'; document.querySelector('#view-assistant .composer button').click(); })()`);
-    await waitFor(ANSWER_DONE, 240000, "assistant final answer");
-    const info = await ev(`(() => ({ chips: [...document.querySelectorAll('#view-assistant .msg--bot:last-child .chip')].map(c => c.textContent).slice(0,4), cites: document.querySelectorAll('#view-assistant .msg--bot .cite').length, ev: document.querySelectorAll('#view-assistant .ev').length, marks: document.querySelectorAll('#view-assistant mark.hl').length, meta: document.querySelector('#view-assistant .msg__meta')?.textContent.slice(0,200) }))()`);
-    check("assistant returns an answer", info.chips.length > 0, JSON.stringify(info.chips));
-    check("assistant answer has no stray 'null' text", await ev(`!/\b(null|undefined|NaN)\b/.test(document.getElementById('view-assistant').innerText)`));
-    check("assistant shows evidence cards with pages", info.ev >= 3, `${info.ev} evidence cards, ${info.marks} highlights, ${info.cites} citation chips`);
-    if (info.cites > 0) {
-        await ev(`document.querySelector('#view-assistant .msg--bot .cite').click()`);
-        check("clicking a citation highlights its evidence card", await ev(`!!document.querySelector('#view-assistant .ev.is-active')`));
-    }
-    await shot("assistant_answer");
-});
-
-await step("assistant: off-topic question is refused", async () => {
-    await ev(`(() => { const t = document.querySelector('#view-assistant textarea'); t.value = 'What is the best way to bake sourdough bread?'; document.querySelector('#view-assistant .composer button').click(); })()`);
-    await waitFor(ANSWER_DONE, 90000, "off-topic answer");
-    check("off-topic question shows 'Insufficient evidence'", await ev(`[...document.querySelectorAll('#view-assistant .msg--bot')].pop().textContent.includes('Insufficient evidence')`));
-});
-
-await step("assistant: follow-up is recognised", async () => {
-    await ev(`(() => { const t = document.querySelector('#view-assistant textarea'); t.value = 'How does the Swin Transformer reduce self-attention cost?'; document.querySelector('#view-assistant .composer button').click(); })()`);
-    await waitFor(ANSWER_DONE, 240000, "answer 3");
-    await ev(`(() => { const t = document.querySelector('#view-assistant textarea'); t.value = 'What about its accuracy?'; document.querySelector('#view-assistant .composer button').click(); })()`);
-    await waitFor(ANSWER_DONE, 240000, "follow-up answer");
-    check("follow-up question is flagged as a follow-up", await ev(`[...document.querySelectorAll('#view-assistant .msg--bot')].pop().textContent.includes('follow-up')`));
-});
-
-await step("explainability: SHAP and LIME for a query", async () => {
-    await go("explain");
-    await ev(`(() => { document.querySelector('#view-explain input.input').value = 'How does the Swin Transformer reduce self-attention cost?'; document.getElementById('lime-on').checked = true; document.querySelector('#view-explain .btn--primary').click(); })()`);
-    await waitFor(`document.querySelectorAll('#view-explain .result-ex').length >= 1`, 180000, "explain results");
-    const n = await ev(`({ cards: document.querySelectorAll('#view-explain .result-ex').length, bars: document.querySelectorAll('#view-explain .result-ex .dbar').length, gauges: document.querySelectorAll('#view-explain .gauge').length })`);
-    check("retrieval explanation shows SHAP/LIME bars", n.cards >= 1 && n.bars >= 6, JSON.stringify(n));
-    await shot("explain");
-});
-
-await step("library: open a paper", async () => {
-    await go("library");
-    await waitFor(`document.querySelectorAll('#view-library .paper').length > 0`, 20000, "library cards");
-    await ev(`document.querySelector('#view-library .paper').click()`);
-    await waitFor(`!document.getElementById('drawer').hidden && document.querySelectorAll('#drawer details.sec').length > 0`, 20000, "drawer");
-    check("paper drawer shows sections with page numbers", await ev(`document.getElementById('drawer').textContent.includes('pp.') || document.getElementById('drawer').textContent.includes('p. ')`));
-    await shot("library_drawer");
-});
-
-await step("pipeline: trigger a report", async () => {
-    await go("pipeline");
-    await waitFor(`document.querySelector('#view-pipeline select')`, 20000, "pipeline form");
-    await ev(`(() => { const s = document.querySelector('#view-pipeline select'); s.value = 'report'; document.querySelector('#view-pipeline .btn--primary').click(); })()`);
-    await waitFor(`document.querySelector('.toast')?.textContent.includes('Started')`, 15000, "toast");
-    await sleep(3000); await ev(`location.reload()`); await sleep(2500);
-    check("report workflow ran and appears in the job list", await ev(`document.getElementById('view-pipeline').textContent.includes('report')`));
-    await shot("pipeline");
-});
-
-await step("legacy: search and analyze", async () => {
+await step("navigation", async () => {
     await go("discover");
-    await ev(`(() => { document.getElementById('search-input').value = 'attention is all you need'; document.querySelector('input[name=source][value=arxiv]').checked = true; document.getElementById('search-form').requestSubmit(); })()`);
-    await waitFor(`document.querySelectorAll('#search-results .paper-card').length > 0`, 90000, "search results");
-    check("legacy search returns cards with abstracts", await ev(`document.querySelector('#search-results .paper-card .paper-card__abstract').textContent.length > 20`));
-    await ev(`document.querySelector('.analyze-paper-btn').click()`);
-    await waitFor(`!document.getElementById('analysis-section').hidden`, 240000, "analysis");
-    const a = await ev(`({ sum: document.getElementById('summary-text').textContent.length, kw: document.querySelectorAll('#keywords-container .tag').length, topics: document.querySelectorAll('#topics-container .topic-bar').length })`);
-    check("legacy analyze returns summary, keywords and topics", a.sum > 40 && a.kw > 0 && a.topics > 0, JSON.stringify(a));
+    const nav = await ev(`[...document.querySelectorAll('.header__link')].map(a => a.textContent.trim())`);
+    check("navigation has only Discover, Library, Assistant", JSON.stringify(nav) === JSON.stringify(["Discover", "Library", "Assistant"]), JSON.stringify(nav));
+    for (const gone of ["dashboard", "benchmarks", "explain", "pipeline"]) {
+        await go(gone);
+        check(`#/${gone} is not a page (falls back to Discover)`, await ev(`!document.getElementById('view-discover').hidden && !document.getElementById('view-${gone}')`));
+    }
+    const codes = await ev(`Promise.all(['/api/dashboard', '/api/benchmarks/overview', '/api/pipeline/status', '/api/retrieval/status', '/api/explain/model'].map(u => fetch(u).then(r => r.status)))`);
+    check("backend/admin endpoints are not available to readers", codes.every((c) => c === 404), JSON.stringify(codes));
+});
+
+await step("discover: search", async () => {
+    await go("discover");
+    await ev(`(() => { document.querySelector('#view-discover .search-input').value = 'attention in vision transformers'; document.querySelector('#view-discover .search-bar .btn--primary').click(); })()`);
+    await waitFor(`document.querySelectorAll('#view-discover .paper').length > 0 || document.querySelector('#view-discover .empty')`, 120000, "search results");
+    const n = await ev(`document.querySelectorAll('#view-discover .paper').length`);
+    check("topic search returns papers with Analyze buttons", n >= 3 && await ev(`[...document.querySelectorAll('#view-discover .paper')].every(c => [...c.querySelectorAll('button')].some(b => b.textContent === 'Analyze'))`), `${n} papers`);
+    check("no backend terms on Discover", (await leaks()) === "", await leaks());
     await shot("discover");
 });
 
+await step("discover: analyze", async () => {
+    await ev(`[...document.querySelectorAll('#view-discover .paper button')].find(b => b.textContent === 'Analyze').click()`);
+    await waitFor(`document.getElementById('drawer').innerText.includes('RELATED TOPICS') || document.getElementById('drawer').innerText.includes('Could not')`, 300000, "analysis");
+    await waitFor(`!document.getElementById('drawer').innerText.includes('Looking')`, 120000, "similar/related lists");
+    const t = await ev(`document.getElementById('drawer').innerText`);
+    check("analysis shows summary, keywords, related topics, similar and more papers", ["SUMMARY", "KEYWORDS", "RELATED TOPICS", "SIMILAR PAPERS", "MORE PAPERS ON THIS TOPIC"].every((s) => t.includes(s)));
+    check("analysis has no stray null/undefined", !/\b(null|undefined|NaN)\b/.test(t));
+    await shot("analysis");
+    await ev(`document.querySelector('#drawer .drawer__close').click()`);
+});
+
+await step("library", async () => {
+    await go("library");
+    await waitFor(`document.querySelectorAll('#view-library .paper').length > 0`, 20000, "library cards");
+    check("library lists papers without technical labels", (await leaks()) === "" && !/chunks|processed|failed/i.test(await ev(`document.getElementById('view-library').innerText`)));
+    await ev(`document.querySelector('#view-library .paper').click()`);
+    await waitFor(`document.getElementById('drawer').innerText.includes('Understand this paper')`, 20000, "paper view");
+    const btns = await ev(`[...document.querySelectorAll('#drawer .chip--accent')].map(b => b.textContent)`);
+    check("paper view offers one-click plain-language explanations", btns.includes("Explain it simply") && btns.length >= 5, JSON.stringify(btns));
+    await shot("library_paper");
+    await ev(`[...document.querySelectorAll('#drawer .chip--accent')].find(b => b.textContent === 'Explain it simply').click()`);
+    await waitFor(`location.hash === '#/assistant'`, 10000, "navigate to assistant");
+    await sleep(800);
+    await waitFor(ANSWER_DONE, 300000, "explanation");
+    const info = await ev(`({ scope: document.querySelector('#view-assistant .chip--accent')?.textContent || '', bubbles: document.querySelectorAll('#view-assistant .msg--bot').length, srcs: document.querySelectorAll('#view-assistant .ev').length, text: [...document.querySelectorAll('#view-assistant .msg--bot')].pop().innerText })`);
+    check("'Explain it simply' opens the assistant on that paper and answers", info.scope.length > 3 && info.text.length > 60, info.scope);
+    check("answer lists its sources with pages", info.srcs >= 1 && /page/.test(await ev(`document.getElementById('view-assistant').innerHTML`)), `${info.srcs} sources`);
+    await shot("assistant_explain");
+});
+
+await step("assistant", async () => {
+    await ask("What do the technical terms mean?");
+    check("assistant answers a follow-up about the same paper", await ev(`document.querySelectorAll('#view-assistant .msg--bot').length >= 2`));
+    check("suggested follow-up questions are offered", await ev(`document.querySelectorAll('#view-assistant .suggest .chip').length >= 2`));
+    const cite = await ev(`document.querySelectorAll('#view-assistant .msg--bot .cite').length`);
+    if (cite > 0) { await ev(`document.querySelector('#view-assistant .msg--bot .cite').click()`); check("clicking a citation reveals its source", await ev(`!!document.querySelector('#view-assistant .ev.is-active')`)); }
+    await ev(`document.querySelector('#view-assistant .scope-clear, #view-assistant .chip--accent')?.click()`);          // widen to the whole library
+    await ask("What is the best way to bake sourdough bread?");
+    check("off-topic question gets a polite 'not found in the papers'", await ev(`[...document.querySelectorAll('#view-assistant .msg--bot')].pop().innerText.toLowerCase().includes('could not find enough information')`));
+    const txt = await ev(`document.getElementById('view-assistant').innerText`);
+    check("no stray null/undefined in the conversation", !/\b(null|undefined|NaN)\b/.test(txt));
+    check("no backend terms in the assistant interface", (await leaks()) === "", await leaks());
+    check("answers never mention how they were produced", !/extractive|language model|fallback|retriev|provider/i.test(txt));
+    await shot("assistant");
+});
+
+check("no JavaScript errors", jsErrors.length === 0, jsErrors.slice(0, 2).join(" | "));
 const failed = results.filter((r) => !r.ok);
 writeFileSync(join(OUT, "results.json"), JSON.stringify({ results, jsErrors }, null, 1));
-console.log(`\n${results.length - failed.length}/${results.length} checks passed; JS errors: ${jsErrors.length}; screenshots in ${OUT}`);
+console.log(`\n${results.length - failed.length}/${results.length} checks passed; screenshots in ${OUT}`);
 ws.close(); chrome.kill();
 process.exit(failed.length ? 1 : 0);

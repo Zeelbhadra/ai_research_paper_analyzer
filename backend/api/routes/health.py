@@ -69,6 +69,10 @@ def readiness_checks() -> dict[str, dict]:
 @bp.get("/readyz")
 def readyz():
     """Readiness: data stores and the production model's indexes are usable. 503 lists what is missing."""
+    from flask import current_app
     checks = readiness_checks()
     ready = all(c["ok"] for c in checks.values() if not c.get("informational"))
-    return jsonify({"status": "ready" if ready else "not_ready", "checks": checks}), (200 if ready else 503)
+    body = {"status": "ready" if ready else "not_ready"}
+    if current_app.config.get("ADMIN_API"):          # which model/index is missing is a backend detail
+        body["checks"] = checks
+    return jsonify(body), (200 if ready else 503)

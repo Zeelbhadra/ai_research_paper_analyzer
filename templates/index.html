@@ -4,13 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description"
-        content="AI Research Paper Analyzer — Search, summarize, and classify research papers with AI.">
-    <title>AI Research Paper Analyzer</title>
+    <meta name="description" content="PaperLens: find research papers on any topic, get plain-language summaries, and ask an assistant to explain them.">
+    <title>PaperLens</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/css/app.css">
 </head>
@@ -18,12 +16,10 @@
 <body>
     <a class="skip-link" href="#main">Skip to content</a>
 
-    <!-- Animated background orbs -->
     <div class="bg-orb bg-orb--1"></div>
     <div class="bg-orb bg-orb--2"></div>
     <div class="bg-orb bg-orb--3"></div>
 
-    <!-- Header -->
     <header class="header" id="header">
         <div class="header__logo">
             <span class="header__icon">🔬</span>
@@ -31,152 +27,34 @@
         </div>
         <nav class="header__nav" aria-label="Main">
             <a href="#/discover" class="header__link" data-route="discover">Discover</a>
-            <a href="#/dashboard" class="header__link" data-route="dashboard">Dashboard</a>
             <a href="#/library" class="header__link" data-route="library">Library</a>
             <a href="#/assistant" class="header__link" data-route="assistant">Assistant</a>
-            <a href="#/benchmarks" class="header__link" data-route="benchmarks">Benchmarks</a>
-            <a href="#/explain" class="header__link" data-route="explain">Explainability</a>
-            <a href="#/pipeline" class="header__link" data-route="pipeline">Pipeline</a>
         </nav>
     </header>
 
-    <div id="status-banner" class="banner" role="status" hidden></div>
-
     <main id="main">
-    <div class="view" id="view-discover" data-view="discover">
-    <!-- Hero Section -->
-    <section class="hero" id="hero-section">
-        <h1 class="hero__title">
-            Analyze Research Papers<br>
-            <span class="hero__gradient">with AI</span>
-        </h1>
-        <p class="hero__subtitle">
-            Search arXiv &amp; Semantic Scholar, upload PDFs, and get AI-powered summaries,
-            keywords, topic classification, and similarity search — all in one place.
-        </p>
-    </section>
-
-    <!-- Search Section -->
-    <section class="section" id="search-section">
-        <div class="glass-card search-card">
-            <h2 class="section__title">🔍 Search Papers</h2>
-            <form id="search-form" class="search-form">
-                <div class="search-bar">
-                    <input type="text" id="search-input" class="search-input"
-                        placeholder="e.g. attention is all you need, transformers, BERT…" autocomplete="off" required>
-                    <button type="submit" class="btn btn--primary" id="search-btn">
-                        <span class="btn__text">Search</span>
-                        <span class="btn__spinner" hidden></span>
-                    </button>
-                </div>
-                <div class="search-options">
-                    <label class="chip-radio">
-                        <input type="radio" name="source" value="all" checked> All Sources
-                    </label>
-                    <label class="chip-radio">
-                        <input type="radio" name="source" value="arxiv"> arXiv
-                    </label>
-                    <label class="chip-radio">
-                        <input type="radio" name="source" value="semantic_scholar"> Semantic Scholar
-                    </label>
-                </div>
-            </form>
-        </div>
-    </section>
-
-    <!-- Search Results -->
-    <section class="section" id="results-section" hidden>
-        <h2 class="section__title">📄 Search Results <span id="result-count" class="badge"></span></h2>
-        <div id="search-results" class="results-grid"></div>
-    </section>
-
-    <!-- Upload Section -->
-    <section class="section" id="upload-section">
-        <div class="glass-card upload-card">
-            <h2 class="section__title">📤 Upload &amp; Analyze</h2>
-            <p class="upload-hint">Drop a PDF or paste text to generate an AI analysis.</p>
-
-            <div class="upload-zone" id="upload-zone">
-                <div class="upload-zone__icon">📎</div>
-                <div class="upload-zone__text">
-                    Drag &amp; drop a PDF here,<br>or <span class="upload-zone__browse">click to browse</span>
-                </div>
-                <input type="file" id="file-input" accept=".pdf" hidden>
+        <section class="view" id="view-discover" data-view="discover">
+            <div class="hero" id="hero-section">
+                <h1 class="hero__title">Understand research papers<br><span class="hero__gradient">in plain language</span></h1>
+                <p class="hero__subtitle">Enter a topic to find papers, get a clear summary of any of them, and ask the assistant to explain anything you do not understand.</p>
             </div>
-
-            <div class="separator"><span>or paste text</span></div>
-
-            <textarea id="text-input" class="text-input" rows="6"
-                placeholder="Paste your paper abstract or full text here…"></textarea>
-
-            <button type="button" class="btn btn--accent" id="analyze-btn">
-                <span class="btn__text">Analyze</span>
-                <span class="btn__spinner" hidden></span>
-            </button>
-        </div>
-    </section>
-
-    <!-- Analysis Results -->
-    <section class="section" id="analysis-section" hidden>
-        <h2 class="section__title">🧠 Analysis Results</h2>
-
-        <div class="analysis-grid">
-            <!-- Summary Card -->
-            <div class="glass-card analysis-card" id="summary-card">
-                <h3 class="card__title">📝 Summary</h3>
-                <p id="summary-text" class="card__body"></p>
-            </div>
-
-            <!-- Keywords Card -->
-            <div class="glass-card analysis-card" id="keywords-card">
-                <h3 class="card__title">🏷️ Keywords</h3>
-                <div id="keywords-container" class="tags"></div>
-            </div>
-
-            <!-- Topics Card -->
-            <div class="glass-card analysis-card" id="topics-card">
-                <h3 class="card__title">📊 Topic Classification</h3>
-                <div id="topics-container" class="topic-bars"></div>
-            </div>
-
-            <!-- Similar Papers Card -->
-            <div class="glass-card analysis-card" id="similar-card">
-                <h3 class="card__title">🔗 Similar Papers</h3>
-                <div id="similar-container" class="similar-list"></div>
-            </div>
-        </div>
-    </section>
-
-    </div>
-
-    <section class="view" id="view-dashboard" data-view="dashboard" hidden></section>
-    <section class="view" id="view-library" data-view="library" hidden></section>
-    <section class="view" id="view-assistant" data-view="assistant" hidden></section>
-    <section class="view" id="view-benchmarks" data-view="benchmarks" hidden></section>
-    <section class="view" id="view-explain" data-view="explain" hidden></section>
-    <section class="view" id="view-pipeline" data-view="pipeline" hidden></section>
+        </section>
+        <section class="view" id="view-library" data-view="library" hidden></section>
+        <section class="view" id="view-assistant" data-view="assistant" hidden></section>
     </main>
 
-    <aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-label="Paper details" hidden></aside>
-    <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+    <aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-label="Details" hidden></aside>
 
-    <!-- Footer -->
     <footer class="footer" id="footer">
-        <p>Built with ❤️ using Flask, HuggingFace Transformers, FAISS &amp; Sentence-Transformers</p>
+        <p>PaperLens: read research with confidence.</p>
     </footer>
 
-    <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
 
-    <script src="/static/script.js"></script>
     <script src="/static/js/core.js"></script>
-    <script src="/static/js/charts.js"></script>
-    <script src="/static/js/view_dashboard.js"></script>
+    <script src="/static/js/view_discover.js"></script>
     <script src="/static/js/view_library.js"></script>
     <script src="/static/js/view_assistant.js"></script>
-    <script src="/static/js/view_benchmarks.js"></script>
-    <script src="/static/js/view_explain.js"></script>
-    <script src="/static/js/view_pipeline.js"></script>
     <script>PL.start();</script>
 </body>
 

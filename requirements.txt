@@ -24,8 +24,6 @@ keybert>=0.8
 
 # LLM provider, explainability, scheduling
 openai>=1.30
-shap>=0.45
-lime>=0.2
 apscheduler>=3.10
 
 # legacy summary cache (optional at runtime)
